@@ -1,3 +1,7 @@
+1999-07-26  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* t/db.t: does not use db_dump while testing
+
 1999-07-23  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
 
 	* lib/Puppet/Storage.pm: name is now mandatory (sorry for the

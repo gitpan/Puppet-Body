@@ -65,17 +65,14 @@ print "ok ",$idx++,"\n";#9
 $test2->deleteDbInfo('dummy');
 print "ok ",$idx++,"\n";#10
 
-untie %dbhash ;
-
-my $res = `db_dump -p $file`;
 
 print "not " unless 
-  index ($res ,'key root;test2# titi
-titi val
-key root;test2# toto
-toto val
-') != -1 ;
+  ($dbhash{'key root;test2# titi'} eq 'titi val' and
+   $dbhash{'key root;test2# toto'} eq 'toto val') ;
 
 print "ok ",$idx++,"\n";#11
+
+untie %dbhash ;
+
 
 #unlink $file;
