@@ -4,10 +4,29 @@ use Carp ;
 use AutoLoader 'AUTOLOAD' ;
 
 use strict ;
-use vars qw($VERSION) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+use vars qw($VERSION %ClassData) ;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
-my $_index = 1 ;
+%ClassData = (dbHash => undef, keyRoot => undef );
+
+# translucent attribute (See Tom Christiansen's perltootc page)
+# creates accessor methods for all keys of ClassData.
+for my $datum (keys %ClassData)
+  {
+    no strict "refs";
+    *$datum = sub 
+      {
+        my $self = shift ;
+        my $class = ref($self) || $self ;
+        unless (ref($self))
+          {
+            $ClassData{$datum} = shift if @_ ;
+            return $ClassData{$datum} ;
+          }
+        $self->{$datum} = shift if @_ ;
+        return defined $self->{$datum} ? $self->{$datum} : $ClassData{$datum};
+      }
+  }
 
 sub new 
   {
@@ -15,17 +34,23 @@ sub new
     my $self = {} ;
     my %args = @_ ;
     
-    foreach (qw/dbHash keyRoot name/)
-      {
-        croak("You must pass parameter $_ to Puppet::Storage:: new $self->{name}") 
-          unless defined $args{$_};
-        $self->{$_} = delete $args{$_} ;
-      }
-
-
     bless $self,$type ;
 
-    $self->{myDbKey} = $self->{keyRoot}.";".$self->{name} ;
+    local $_ ;
+
+    croak("You must pass a name to Puppet::Storage") 
+          unless defined $args{name};
+
+    $self->{name}=$args{name} ;
+
+    foreach (qw/dbHash keyRoot/)
+      {
+        $self->{$_} = delete $args{$_} ;
+        croak "You must define $_ to Puppet::Storage $self->{name}"
+          unless defined $self->$_() ;
+      }
+
+    $self->{myDbKey} = $self->keyRoot.";".$self->{name} ;
 
     return $self;
   }
@@ -42,35 +67,24 @@ Puppet::Storage - Utility class to handle permanent data
 
  use Puppet::Storage ;
 
- package myClass ;
- sub new
-  {
-    my $type = shift ;
-    my $self = {};
-    $self->{storage} = new Puppet::Storage(@_) ;
-    bless $self,$type ;
-  }
-
- package main ;
-
- # create a class with persistent data
  my $file = 'test.db';
- my %dbhash;
- # you manage the DB file
- tie %dbhash, 'MLDBM', $file , O_CREAT|O_RDWR, 0640 or die $! ;
+ my %db;
 
- my $test = new myClass 
-   (
-    name => 'test',
-    dbHash => \%dbhash,
-    keyRoot => 'key root'
-   );
+ # you manage the DB file
+ tie %db, 'MLDBM', $file , O_CREAT|O_RDWR, 0640 or die $! ;
+
+ # translucent attributes
+ Puppet::Storage->dbHash(\%db);
+ Puppet::Storage->keyRoot('key root');
+
+ my $foo = new Puppet::Storage (name => 'foo');
+ my $bar = new Puppet::Storage (name => 'bar');
 
  # store some data in permanent storage
- $test->storeDbInfo(toto => 'toto val', dummy => 'null') ;
+ $foo->storeDbInfo(toto => 'toto val', dummy => 'null') ;
 
  # remove some data from permanent storage
- $test->deleteDbInfo('dummy');
+ $bar->deleteDbInfo('dummy');
 
  # at the end of your program, just to be on the safe side
  untie %dbhash ;
@@ -80,6 +94,25 @@ Puppet::Storage - Utility class to handle permanent data
 Puppet::Storage is a utility class which provides a facility to store data 
 on a database file tied to a hash.(with L<MLDBM>)
 
+=head1 Class data
+
+These items are translucent attributes (See L<perltootc> by Tom Christiansen).
+
+Using the following method, you may set or query the value for the data
+class. And these parameters may be overridden with the constructor or by
+invoking this method by the object rather than by the class.
+
+=over 4
+
+=item keyRoot
+
+See L<"Database management">.
+
+=item dbHash
+
+ref of the tied hash. See L<"Database management">.
+
+=back
 
 =head1 Constructor
 
@@ -93,15 +126,45 @@ Creates new Puppet::Storage object. New() parameters are:
 
 The name of your object (no defaults)
 
-=item keyRoot
+=back
 
-See L<"Database management">.
+=head2 spawn(...)
 
-=item dbHash
+Spawn a new Puppet::Storage object re-using the translucent attribute
+of the spawner object.
 
-ref of the tied hash. See L<"Database management">.
+parameters are:
+
+=over 4
+
+=item name
+
+The name of your object (no defaults)
 
 =back
+
+=head2 child(...)
+
+Spawn a new Puppet::Storage object re-using the translucent attribute
+of the spawner object. On top of that a new keyRoot attribute is defined
+as '<parent_keyroot child_name';
+
+E.g. if the parent keyroot is 'foo', the parent name is 'bar', the
+child name is 'calvin', then the new keyRoot of the child is set to
+'foo bar'. So for instance a 'toto' data will be stored in the child
+with this key: 'foo bar;calvin#toto'. That's pretty complex,
+fortunately, you shouldn't have to worry about the key managment.
+
+parameters are:
+
+=over 4
+
+=item name
+
+The name of your object (no defaults)
+
+=back
+
 
 =head1 Database management
 
@@ -156,6 +219,39 @@ L<perl>, L<Puppet::Body>
 
 =cut
 
+sub spawn
+  {
+    my $self = shift ;
+    my %args = @_ ;
+
+    croak "No name passed to $self->{name}::spawn\n" unless 
+      defined $args{name};
+
+    my %new ;
+
+    #optionnal, we may rely on the .fmrc
+    foreach my $k (keys %ClassData)
+      {
+        my $v = $args{$k} || $self->{$k} ;
+        $new{$k} = $v if defined $v ;
+      }
+    
+    return ref($self)->new 
+      (
+       name => $args{name},
+       %new
+      ) ;
+  }
+
+sub child
+  {
+    my $self = shift ;
+    my %args = @_ ;
+
+    $args{keyRoot} = $self->keyRoot().' '.$self->{name} ;
+    return $self->spawn(%args) ;
+  }
+
 ### Methods to handle permanent data storage
 
 sub setName
@@ -183,7 +279,7 @@ sub storeDbInfo
     foreach my $hkey (keys %$h)
       {
         my $valdbkey = $self->{myDbKey}."# $hkey";
-        $self->{dbHash}{$valdbkey} = $h->{$hkey} ; # register it in MLDBM
+        $self->dbHash()->{$valdbkey} = $h->{$hkey} ; # register it in MLDBM
       }
   }
 
@@ -195,27 +291,28 @@ sub deleteDbInfo
     foreach my $hkey (@args)
       {
         my $valdbkey = $self->{myDbKey}."# $hkey";
-        delete $self->{dbHash}{$valdbkey};
+        delete $self->dbHash()->{$valdbkey};
       }
   }
 
 sub getDbInfo
    {
      my $self = shift ;
+     local $_;
      if (scalar @_ == 1)
        {
          my $key = shift ;
          my $valdbkey = $self->{myDbKey}."# $key";
-         return $self->{dbHash}{$valdbkey} ;
+         return $self->dbHash()->{$valdbkey} ;
        }
      else
        {
-         #print "@keys\n",@{$self->{dbHash}}{@keys},"\n";
+         #print "@keys\n",@{$self->dbHash()}{@keys},"\n";
          my %h ;
          foreach (@_)
            {
              my $key = $self->{myDbKey}."# $_" ;
-             $h{$_} = $self->{dbHash}{$key} if defined $self->{dbHash}{$key};
+             $h{$_} = $self->dbHash()->{$key} if defined $self->dbHash()->{$key};
            }
          #print  @h{@_},"\n";
          return \%h;
@@ -229,10 +326,11 @@ sub dumpDbInfo
 
      my $pat = $self->{myDbKey} .'# ';
      
-     foreach (keys %{$self->{dbHash}})
+     local $_;
+     foreach (keys %{$self->dbHash()})
        {
          my $key = $_ ;
-         $h{$key}=$self->{dbHash}{$_} if $key =~ s/$pat//;
+         $h{$key}=$self->dbHash()->{$_} if $key =~ s/$pat//;
        }
 
      return \%h;

@@ -6,7 +6,7 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..9\n"; }
+BEGIN { $| = 1; print "1..18\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Fcntl ;
 use MLDBM qw(DB_File) ;
@@ -30,11 +30,11 @@ my %dbhash;
 tie %dbhash,  'MLDBM',    $file , O_CREAT|O_RDWR, 0640 or die $! ;
 print "ok ",$idx++,"\n";#2
 
+Puppet::Storage->dbHash(\%dbhash) ;
+Puppet::Storage->keyRoot('key root') ;
 my $test2 = new Puppet::Storage 
   (
-   name => 'test2',
-   dbHash => \%dbhash,
-   keyRoot => 'key root'
+   name => 'test2'
   );
 
 print "ok ",$idx++,"\n";#3
@@ -71,6 +71,43 @@ print "not " unless
    $dbhash{'key root;test2# toto'} eq 'toto val') ;
 
 print "ok ",$idx++,"\n";#11
+
+my $test3=$test2->spawn(name => 'test3');
+print "not " unless defined $test3 ;
+print "ok ",$idx++,"\n";
+
+$test3->storeDbInfo(toto => 'toto val for 3') ;
+print "ok ",$idx++,"\n";#6
+
+print "not " unless 
+  ($dbhash{'key root;test3# toto'} eq 'toto val for 3') ;
+
+print "ok ",$idx++,"\n";#11
+
+my $test4=$test2->spawn(name => 'test4', keyRoot => 'another key');
+print "not " unless defined $test4 ;
+print "ok ",$idx++,"\n";
+
+$test4->storeDbInfo(toto => 'toto val for 4') ;
+print "ok ",$idx++,"\n";#6
+
+print "not " unless 
+  ($dbhash{'another key;test4# toto'} eq 'toto val for 4') ;
+
+print "ok ",$idx++,"\n";#11
+
+my $test5=$test2->child(name => 'test5');
+print "not " unless defined $test5 ;
+print "ok ",$idx++,"\n";
+
+$test5->storeDbInfo(toto => 'toto val for 5') ;
+print "ok ",$idx++,"\n";#6
+
+print "not " unless 
+  ($dbhash{'key root test2;test5# toto'} eq 'toto val for 5') ;
+
+print "ok ",$idx++,"\n";#11
+
 
 untie %dbhash ;
 

@@ -1,3 +1,10 @@
+1999-10-11  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* Puppet/Storage.pm: 
+	- added translucent attributes
+	- added	spawn and child constructors
+
+
 1999-07-26  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
 
 	* t/db.t: does not use db_dump while testing

@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile
   (
    'NAME'	   => 'Puppet::Body',
-   'VERSION' => '1.017',
+   'VERSION' => '1.018',
    'dist' => {COMPRESS=>'gzip -9f', SUFFIX => 'gz'},
    ($] >= 5.005 ?
     (ABSTRACT   => 'Framework to handle permanent data, has-a relations and logs',
