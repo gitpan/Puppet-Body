@@ -1,0 +1,55 @@
+
+Puppet::Body is a utility class that is used (and not inherited like
+the deprecated Puppet::Any) to manage dynamic has-a relations between
+objects.
+
+This class provides the following features :
+
+- An event log display so derived object may log their activity
+- A Debug log display so derived object may log their "accidental" 
+  activities
+- A set of functions to managed "has-a" relationship between Puppet objects.
+- A facility to store data on a database file tied to a hash.
+
+
+About Puppet body classes
+
+Puppet classes are a set of utility classes which can be used by any
+object.  If you use directly the Puppet::Body class, you get the plain
+functionnality.  And if you use the Puppet::Show class, you can get
+the same functionnality and a Tk Gui to manage it.
+
+
+I'd like people who use this module for their application to drop me a
+short note about what they're using this module for.
+
+See the embedded documentation in the module for more details.
+
+Comments and suggestions are always welcome.
+
+Legal mumbo jumbo:
+
+ Copyright (c) 1998-1999 Dominique Dumont. All rights reserved.
+ This program is free software; you can redistribute it and/or
+ modify it under the same terms as Perl itself.
+ 
+
+ - Dominique Dumont
+   dominique_dumont@grenoble.hp.com
+
+---------------------------------------------------------------------
+INSTALLATION
+
+   	 gunzip -c <dist_file>.tar.gz | tar xvf -
+   	 cd <dist_directory>
+   	 perl Makefile.PL
+   	 make test          
+   	 make install
+
+
+
+
+
+
+
+
