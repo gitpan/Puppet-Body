@@ -11,6 +11,9 @@ This class provides the following features :
 - A set of functions to managed "has-a" relationship between Puppet objects.
 - A facility to store data on a database file tied to a hash.
 
+Suggested DSLI entry in the Perl Module list:
+
+Puppet::Body   adpO  Handles permanent data, has-a relations and logs DDUMONT
 
 About Puppet body classes
 

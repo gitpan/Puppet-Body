@@ -1,9 +1,9 @@
 ############################################################
 #
-# $Header: /home/domi/Tools/perlDev/Puppet_Body/RCS/Body.pm,v 1.12 1999/01/08 14:34:48 domi Exp $
+# $Header: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Body/RCS/Body.pm,v 1.13 1999/02/05 12:11:22 domi Exp $
 #
-# $Source: /home/domi/Tools/perlDev/Puppet_Body/RCS/Body.pm,v $
-# $Revision: 1.12 $
+# $Source: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Body/RCS/Body.pm,v $
+# $Revision: 1.13 $
 # $Locker:  $
 # 
 ############################################################
@@ -16,7 +16,7 @@ use Puppet::LogBody ;
 
 use strict ;
 use vars qw($VERSION $_index) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
 $_index = 1 ;
 
 sub new 
@@ -154,7 +154,7 @@ A facility to store data on a database file tied to a hash.(with L<MLDBM>)
 
 =head1 Constructor
 
-=head2 new( ... )
+=head2 new(...)
 
 Creates new Puppet object. New() parameters are:
 
@@ -178,9 +178,15 @@ ref of the tied hash. See L<"Database management">.
 
 =item how
 
-Specify how logs are to be handled. See L<Puppet::LogBody/"Constructor.*">
+Specify how logs are to be handled. See L<Puppet::LogBody/"Constructor">
 
 =back
+
+=head1 Generic methods
+
+=head2 getName()
+
+Returns the name of this object.
 
 =head1 HAS-A relations management methods
 
@@ -193,6 +199,11 @@ Acquire the object ref as a child. Parameters are:
 =item body
 
 Reference of the Puppet::Body object that is to be acquired.
+
+=item name
+
+Name to refer to the acquired Puppet::Body. Defaults to the name of the 
+acquired Puppet::Body object.
 
 =back
 
@@ -254,18 +265,22 @@ Needless to say, creating two instances
 of Puppet::Body with the same keyRoot and name is a I<bad> idea because you 
 may mix up data from one object to another.
 
-=head2 storeDbInfo( key => value, ...)
+=head2 storeDbInfo(%hash)
 
 Store the passed hash in the database. You may also pass a hash ref as single
 argument.
 
-=head2 deleteDbInfo( key, ...)
+=head2 deleteDbInfo(key,...)
 
 delete the "key" entries from the database.
 
-=head2 getDbInfo(key)
+=head2 getDbInfo(key,...)
 
-Will return the value of the "key" entry from the database.
+If one key is specified, getDbInfo will return the value of the "key"
+entry from the database.
+
+If more than one key is passed, getDbInfo will return a hash ref containing
+a copy of the key,value pairs from the database.
 
 =head1 About Puppet body classes
 
@@ -304,7 +319,7 @@ sub acquire
     my $ref = $args{body}  ; # $ref must be Puppet::Body. 
     croak "$self->{name}->acquire: No body ref passed\n" unless defined $ref ;
 
-    my $name = $ref->getName();
+    my $name = $args{name} || $ref->getName();
 
     if (defined $self->{content}{$name})
       {
@@ -460,8 +475,20 @@ sub deleteDbInfo
 sub getDbInfo
    {
      my $self = shift ;
-     my $key = shift ;
-     my $valdbkey = $self->{myDbKey}."# $key";
-     return $self->{dbHash}{$valdbkey} ;
+     if (scalar @_ == 1)
+       {
+         my $key = shift ;
+         my $valdbkey = $self->{myDbKey}."# $key";
+         return $self->{dbHash}{$valdbkey} ;
+       }
+     else
+       {
+         my @keys = map ($self->{myDbKey}."# $_",@_);
+         #print "@keys\n",@{$self->{dbHash}}{@keys},"\n";
+         my %h ;
+         @h{@_} = @{$self->{dbHash}}{@keys};
+         #print  @h{@_},"\n";
+         return \%h;
+       }
    }
 

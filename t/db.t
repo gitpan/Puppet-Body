@@ -6,7 +6,7 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..9\n"; }
+BEGIN { $| = 1; print "1..10\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Fcntl ;
 use MLDBM qw(DB_File) ;
@@ -50,6 +50,13 @@ $test->storeDbInfo(toto => 'toto val',
 print "ok ",$idx++,"\n";
 
 print "not " unless $test->getDbInfo('toto') eq "toto val" ;
+print "ok ",$idx++,"\n";
+
+my $h = $test->getDbInfo('toto','titi','dummy');
+print "not " unless ($h->{toto} eq 'toto val'
+                     and $h->{titi} eq 'titi val'
+                     and $h->{dummy} eq 'null') ;
+
 print "ok ",$idx++,"\n";
 
 $test->deleteDbInfo('dummy');
