@@ -13,18 +13,26 @@ This class provides the following features :
 
 Suggested DSLI entry in the Perl Module list:
 
-Puppet::Body   adpO  Handles permanent data, has-a relations and logs DDUMONT
+Puppet::Body    adpO  Has-a relations and logs in Puppet framework DDUMONT
+Puppet::Storage adpO  Permanent data in Puppet framework           DDUMONT
 
 About Puppet body classes
 
-Puppet classes are a set of utility classes which can be used by any
-object.  If you use directly the Puppet::Body class, you get the plain
+Puppet framework is made of a set of utility classes. I currently use
+this framework for a major application Tk application.
+
+If you use directly the Puppet::Body class, you get the plain
 functionnality.  And if you use the Puppet::Show class, you can get
 the same functionnality and a Tk Gui to manage it.
 
 
 I'd like people who use this module for their application to drop me a
 short note about what they're using this module for.
+
+Starting from version 1.014, Puppet::Body is split in 2 classes:
+Puppet::Storage and Puppet::Body. Sorry to change the design, I hope
+this will not bother too many people (I don't think so because I has
+very few questions on this module)
 
 See the embedded documentation in the module for more details.
 

@@ -1,9 +1,9 @@
 ############################################################
 #
-# $Header: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Body/RCS/Body.pm,v 1.13 1999/02/05 12:11:22 domi Exp $
+# $Header: /home/domi/Tools/perlDev/Puppet_Body/lib/Puppet/RCS/Body.pm,v 1.15 1999/05/27 11:54:35 domi Exp $
 #
-# $Source: /mnt/barrayar/d06/home/domi/Tools/perlDev/Puppet_Body/RCS/Body.pm,v $
-# $Revision: 1.13 $
+# $Source: /home/domi/Tools/perlDev/Puppet_Body/lib/Puppet/RCS/Body.pm,v $
+# $Revision: 1.15 $
 # $Locker:  $
 # 
 ############################################################
@@ -16,7 +16,7 @@ use Puppet::LogBody ;
 
 use strict ;
 use vars qw($VERSION $_index) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.15 $ =~ /(\d+)\.(\d+)/;
 $_index = 1 ;
 
 sub new 
@@ -25,7 +25,7 @@ sub new
     my $self = {} ;
     my %args = @_ ;
     
-    foreach (qw/name dbHash keyRoot cloth/)
+    foreach (qw/name cloth/)
       {
         $self->{$_} = delete $args{$_} ;
       }
@@ -33,12 +33,7 @@ sub new
     $self->{name}='anonymous'.$_index++ unless defined $self->{name} ;
     die "no 'cloth' parameter defined for body $self->{name}\n" unless
       defined $self->{cloth};
-
     bless $self,$type ;
-
-    # If permanent data is used, I must check some parameters
-    $self->_checkDbParameters() 
-      if (defined $self->{dbHash} or defined $self->{keyRoot}) ;
 
     $self->_createLogs($args{how}) ;
 
@@ -70,7 +65,7 @@ __END__
 
 =head1 NAME
 
-Puppet::Body - Utility class to handle permanent data, has-a relations and logs
+Puppet::Body - Utility class to handle has-a relations and logs
 
 =head1 SYNOPSIS
 
@@ -99,27 +94,6 @@ Puppet::Body - Utility class to handle permanent data, has-a relations and logs
  # foo no longer has $baz
  $foo->body->drop($baz);
 
- # create a class with persistent data
- my $file = 'test.db';
- my %dbhash;
- # you manage the DB file
- tie %dbhash, 'MLDBM', $file , O_CREAT|O_RDWR, 0640 or die $! ;
-
- my $test = new myClass 
-   (
-    name => 'test',
-    dbHash => \%dbhash,
-    keyRoot => 'key root'
-   );
-
- # store some data in permanent storage
- $test->storeDbInfo(toto => 'toto val', dummy => 'null') ;
-
- # remove some data from permanent storage
- $test->deleteDbInfo('dummy');
-
- # at the end of your program, just to be on the safe side
- untie %dbhash ;
 
 =head1 DESCRIPTION
 
@@ -138,17 +112,12 @@ L<Puppet::LogBody>)
 =item *
 
 A Debug log display so user object may log their "accidental"
-activities(with
-L<Puppet::LogBody>)
+activities(with L<Puppet::LogBody>)
 
 
 =item *
 
 A set of functions to managed "has-a" relationship between Puppet objects.
-
-=item *
-
-A facility to store data on a database file tied to a hash.(with L<MLDBM>)
 
 =back
 
@@ -167,14 +136,6 @@ The name of your object (defaults to "anonymous1" or "anonymous2" ...)
 =item cloth
 
 The ref of your object
-
-=item keyRoot
-
-See L<"Database management">.
-
-=item dbHash
-
-ref of the tied hash. See L<"Database management">.
 
 =item how
 
@@ -251,40 +212,11 @@ Will log the passed text into the debug and events log object.
 
 Will log the passed text into the events log object.
 
-=head1 Database management
+=head1 About Puppet framework
 
-The class is designed to store its data in a 
-database file. (For this you should use MLDBM if you want to store
-more than a scalar in the database). The key for this entry is
-"$keyRoot;$name# $key". keyRoot and name being passed to the constructor of
-the object and 'key' is the name of the value you want to store
-(This may remind perl old timers of a trick to emulate
-multi-dimensional hashes in perl4)
+Puppet framework is made of a set of utility classes. I currently use this
+framework for a major application Tk application. 
 
-Needless to say, creating two instances
-of Puppet::Body with the same keyRoot and name is a I<bad> idea because you 
-may mix up data from one object to another.
-
-=head2 storeDbInfo(%hash)
-
-Store the passed hash in the database. You may also pass a hash ref as single
-argument.
-
-=head2 deleteDbInfo(key,...)
-
-delete the "key" entries from the database.
-
-=head2 getDbInfo(key,...)
-
-If one key is specified, getDbInfo will return the value of the "key"
-entry from the database.
-
-If more than one key is passed, getDbInfo will return a hash ref containing
-a copy of the key,value pairs from the database.
-
-=head1 About Puppet body classes
-
-Puppet classes are a set of utility classes which can be used by any object.
 If you use directly the Puppet::Body class, you get the plain functionnality.
 And if you use the Puppet::Show class, you can get the same functionnality and
 a Tk Gui to manage it. 
@@ -299,7 +231,7 @@ modify it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-perl(1), Puppet::Log(3), Puppet::Show(3)
+L<perl>, L<Puppet::Log>, L<Puppet::Storage>, L<Puppet::Show>
 
 =cut
 
@@ -319,7 +251,7 @@ sub acquire
     my $ref = $args{body}  ; # $ref must be Puppet::Body. 
     croak "$self->{name}->acquire: No body ref passed\n" unless defined $ref ;
 
-    my $name = $args{name} || $ref->getName();
+    my $name = $ref->getName();
 
     if (defined $self->{content}{$name})
       {
@@ -422,7 +354,6 @@ sub printDebug
     my $self= shift ;
     my $text=shift ;
     $self->{'log'}{debug}  ->log($text) ;
-    $self->{'log'}{'event'}->log($text) ;
   }
 
 sub printEvent
@@ -432,63 +363,4 @@ sub printEvent
     $self->{'log'}{'event'}->log($text) ;
   }
 
-### Methods to handle permanent data storage
-
-sub _checkDbParameters
-  {
-    my $self = shift ;
-
-    foreach (qw/name dbHash keyRoot/)
-      {
-        croak("You must pass parameter $_ to $type $self->{name}\n") 
-          unless defined $self->{$_};
-      }
-    $self->{myDbKey} = $self->{keyRoot}.";".$self->{name} ;
-  }
-
-sub storeDbInfo
-  {
-    my $self = shift ;
-    my $h ;
-    if (scalar(@_) == 1) {$h = shift ;}
-    else {%$h = @_ ;}
-    
-    foreach my $hkey (keys %$h)
-      {
-        my $valdbkey = $self->{myDbKey}."# $hkey";
-        $self->{dbHash}{$valdbkey} = $h->{$hkey} ; # register it in MLDBM
-      }
-  }
-
-sub deleteDbInfo
-  {
-    my $self = shift ;
-    my @args = @_ ;
-
-    foreach my $hkey (@args)
-      {
-        my $valdbkey = $self->{myDbKey}."# $hkey";
-        delete $self->{dbHash}{$valdbkey};
-      }
-  }
-
-sub getDbInfo
-   {
-     my $self = shift ;
-     if (scalar @_ == 1)
-       {
-         my $key = shift ;
-         my $valdbkey = $self->{myDbKey}."# $key";
-         return $self->{dbHash}{$valdbkey} ;
-       }
-     else
-       {
-         my @keys = map ($self->{myDbKey}."# $_",@_);
-         #print "@keys\n",@{$self->{dbHash}}{@keys},"\n";
-         my %h ;
-         @h{@_} = @{$self->{dbHash}}{@keys};
-         #print  @h{@_},"\n";
-         return \%h;
-       }
-   }
 

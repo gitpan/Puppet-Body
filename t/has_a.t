@@ -82,6 +82,7 @@ $charlotteb-> acquire(body => $common->body) ;
 $charlotteb-> acquire(body => $unknown->body) ;
 print "not " unless  join(" ",$charlotteb->contentNames) 
   eq "anonymous1 common";
+#print join(" ",$charlotteb->contentNames),"\n";
 print "ok ",$idx++,"\n";
 
 $charlotteb-> drop('common') ;
@@ -108,3 +109,4 @@ print "not " unless  $tb->body->getContainer('under_test')->cloth->action
   eq "Hi under_test";
 
 print "ok ",$idx++,"\n";
+
