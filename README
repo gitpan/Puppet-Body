@@ -5,8 +5,8 @@ objects.
 
 This class provides the following features :
 
-- An event log display so derived object may log their activity
-- A Debug log display so derived object may log their "accidental" 
+- An event log so derived object may log their activity
+- A Debug log so derived object may log their "accidental" 
   activities
 - A set of functions to managed "has-a" relationship between Puppet objects.
 - A facility to store data on a database file tied to a hash.

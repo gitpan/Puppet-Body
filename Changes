@@ -1,3 +1,9 @@
+1999-07-23  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* lib/Puppet/Storage.pm: name is now mandatory (sorry for the
+	change, but the generated name had a random aspect that preclude
+	object to retrieve what they store previously)
+
 1999-05-27  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
 
 	* moved storage handling in Puppet::Storage

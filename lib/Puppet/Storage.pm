@@ -5,7 +5,7 @@ use AutoLoader 'AUTOLOAD' ;
 
 use strict ;
 use vars qw($VERSION) ;
-$VERSION = sprintf "%d.%03d", q$Revision: 1.1 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 my $_index = 1 ;
 
@@ -15,11 +15,9 @@ sub new
     my $self = {} ;
     my %args = @_ ;
     
-    $self->{name}= $args{name} || 'anonymous'.$_index++ ;
-
-    foreach (qw/dbHash keyRoot/)
+    foreach (qw/dbHash keyRoot name/)
       {
-        croak("You must pass parameter $_ to Puppet::Storage:: new $self->{name}\n") 
+        croak("You must pass parameter $_ to Puppet::Storage:: new $self->{name}") 
           unless defined $args{$_};
         $self->{$_} = delete $args{$_} ;
       }
@@ -54,9 +52,6 @@ Puppet::Storage - Utility class to handle permanent data
   }
 
  package main ;
-
- # create a class with no persistent data
- my $foo = new myClass (Name => 'foo') ;
 
  # create a class with persistent data
  my $file = 'test.db';
@@ -96,7 +91,7 @@ Creates new Puppet::Storage object. New() parameters are:
 
 =item name
 
-The name of your object (defaults to "anonymous1" or "anonymous2" ...)
+The name of your object (no defaults)
 
 =item keyRoot
 
@@ -215,10 +210,13 @@ sub getDbInfo
        }
      else
        {
-         my @keys = map ($self->{myDbKey}."# $_",@_);
          #print "@keys\n",@{$self->{dbHash}}{@keys},"\n";
          my %h ;
-         @h{@_} = @{$self->{dbHash}}{@keys};
+         foreach (@_)
+           {
+             my $key = $self->{myDbKey}."# $_" ;
+             $h{$_} = $self->{dbHash}{$key} if defined $self->{dbHash}{$key};
+           }
          #print  @h{@_},"\n";
          return \%h;
        }
